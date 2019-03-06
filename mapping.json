@@ -1,0 +1,28 @@
+{
+    "venues":
+    {
+        "Electrowerkz": "937",
+        "Islington Metal Works": "23884",
+        "FOLD": "155399",
+        "The Cause": "150005",
+        "Corsica Studios": "2587",
+        "Bloc (Autumn Street)": "62301",
+        "Mick's Garage": "114463",
+        "Printworks": "127337",
+        "E1": "141756",
+        "Five Miles": "133599",
+        "Peckham Rye Park": "143848",
+        "The Pickle Factory": "95767",
+        "Oval Space": "60356",
+        "Phonox": "106730",
+        "Studio 338": "74592"
+    },
+    "artists":
+    {
+        "Dax J": "daxj",
+        "Marcel Dettmann": "marceldettmann",
+        "Martin Garrix": "martingarrix",
+        "Nina Kraviz": "ninakraviz",
+        "Paula Temple": "paulatemple"
+    }
+}

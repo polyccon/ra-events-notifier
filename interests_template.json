@@ -1,10 +1,23 @@
 {
-    "venues":
-    {
-        "Printworks": "127337"
+    "Name": {
+        "name": "Name",
+        "email": "example@example.com",
+        "venues": [
+            "Electrowerkz"
+        ],
+        "artists": [
+            "Nina Kraviz"
+        ]
     },
-    "emails":
-    [
-        "example@example.com"
-    ]
+    "Other Name": {
+        "name": "Other Name",
+        "email": "otherexample@example.com",
+        "venues": [
+            "Printworks",
+            "Electrowerkz"
+        ],
+        "artists": [
+            "Nina Kraviz"
+        ]
+    }
 }
