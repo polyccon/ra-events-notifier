@@ -1,9 +1,10 @@
 class Person:
-    def __init__(self, name, email, venues, artists):
+    def __init__(self, name, email, venues, artists, locations):
         self.name = name
         self.email = email
         self.venues = venues
         self.artists = artists
+        self.locations = locations
         self.email_body = ""
 
     def add_to_email(self, message):
@@ -14,10 +15,16 @@ class Person:
     def add_email_ending(self):
         venues_list = ", ".join(self.venues)
         artists_list = ", ".join(self.artists)
+        if not self.locations:
+            locations_list = "Worldwide"
+        else:
+            locations_list = ", ".join(self.locations)
         emoji = "\u2764"
         message = f"Your venues: <br> \
                 <b>{venues_list}</b> <br><br>Your artists: <br> \
                 <b>{artists_list}</b> <br><br> \
+                Your new artist events locations: <br> \
+                <b>{locations_list}</b> <br><br> \
                 If you want anything removed from or added to this list, \
                 reply to this email. {emoji}"
         self.email_body += message

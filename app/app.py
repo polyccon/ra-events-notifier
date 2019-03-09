@@ -25,7 +25,7 @@ from app.person import Person
 
 
 class App:
-    DEBUG = True
+    DEBUG = False
 
     if DEBUG:
         CONFIG_PATH = "testing_config.json"
@@ -125,7 +125,9 @@ class App:
                         message = self.compose_message(
                             event, name=artist_name, event_type="artist"
                         )
-                        self.add_artist_notification(artist_name, message, people)
+                        self.add_artist_notification(
+                            artist_name, event, message, people
+                        )
         db.commit()
         self.send_emails(people)
         print(
@@ -147,7 +149,11 @@ class App:
             person = person_data[1]
             people.append(
                 Person(
-                    person["name"], person["email"], person["venues"], person["artists"]
+                    person["name"],
+                    person["email"],
+                    person["venues"],
+                    person["artists"],
+                    person["locations"],
                 )
             )
             all_venues.extend(person["venues"])
@@ -208,10 +214,13 @@ class App:
             if venue in person.venues:
                 person.add_to_email(message)
 
-    def add_artist_notification(self, artist_name, message, people):
+    def add_artist_notification(self, artist_name, event, message, people):
         for person in people:
-            if artist_name in person.artists:
-                person.add_to_email(message)
+            if not artist_name in person.artists:
+                return
+            for location in person.locations:
+                if location in event.venue:
+                    person.add_to_email(message)
 
     def send_emails(self, people):
         service = discovery.build("gmail", "v1", credentials=self.make_credentials())
