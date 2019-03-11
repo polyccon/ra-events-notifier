@@ -70,22 +70,21 @@ class App:
                         f"Could not generate event from the following html: {html_event.get_text()}"
                     )
 
-                if event.event_id is not None:
-                    if not db.in_venues_database(event.event_id):
-                        print(
-                            f"NEW EVENT WITH ID {event.event_id} WILL BE ADDED TO THE DATABASE"
-                        )
-                        # Add the ticket prices to the event
-                        event.tickets = self.get_tickets(event.event_url)
-                        db.add_venue_event(event.event_id)
-                        number_of_new_events += 1
+                if not db.in_venues_database(event.event_id):
+                    print(
+                        f"NEW EVENT WITH URL {event.event_url} WILL BE ADDED TO THE DATABASE"
+                    )
+                    # Add the ticket prices to the event
+                    event.tickets = self.get_tickets(event.event_url)
+                    db.add_venue_event(event.event_id)
+                    number_of_new_events += 1
 
-                        message = self.compose_message(
-                            event, name=venue_name, event_type="venue"
-                        )
-                        self.add_venue_notification(venue_name, message, people)
+                    message = self.compose_message(
+                        event, name=venue_name, event_type="venue"
+                    )
+                    self.add_venue_notification(venue_name, message, people)
         print(
-            f"{number_of_new_events} NEW EVENTS FOUND AT {str(datetime.datetime.now())}"
+            f"{number_of_new_events} NEW VENUE EVENTS FOUND AT {str(datetime.datetime.now())}"
         )
 
         # go through artists
@@ -112,22 +111,19 @@ class App:
                         f"Could not generate event from the following html: {html_event.get_text()}"
                     )
 
-                if event.event_id is not None:
-                    if not db.in_artists_database(event.event_id, artist_name):
-                        print(
-                            f"NEW EVENT WITH ID {event.event_id} WILL BE ADDED TO THE DATABASE"
-                        )
-                        # Add the ticket prices to the event
-                        event.tickets = self.get_tickets(event.event_url)
-                        db.add_artist_event(event.event_id, artist_name)
-                        number_of_new_artist_events += 1
+                if not db.in_artists_database(event.event_id, artist_name):
+                    print(
+                        f"NEW EVENT WITH ID {event.event_id} WILL BE ADDED TO THE DATABASE"
+                    )
+                    # Add the ticket prices to the event
+                    event.tickets = self.get_tickets(event.event_url)
+                    db.add_artist_event(event.event_id, artist_name)
+                    number_of_new_artist_events += 1
 
-                        message = self.compose_message(
-                            event, name=artist_name, event_type="artist"
-                        )
-                        self.add_artist_notification(
-                            artist_name, event, message, people
-                        )
+                    message = self.compose_message(
+                        event, name=artist_name, event_type="artist"
+                    )
+                    self.add_artist_notification(artist_name, event, message, people)
         db.commit()
         self.send_emails(people)
         print(
@@ -216,9 +212,12 @@ class App:
 
     def add_artist_notification(self, artist_name, event, message, people):
         for person in people:
-            if not artist_name in person.artists:
+            if not artist_name in person.artists:  # do not notify if irrelevant
                 return
-            for location in person.locations:
+            if not person.locations:  # notify if no location preference specified
+                person.add_to_email(message)
+                return
+            for location in person.locations:  # notify if location preference matches
                 if location in event.venue:
                     person.add_to_email(message)
 
