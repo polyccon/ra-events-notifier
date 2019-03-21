@@ -1,11 +1,22 @@
-class Person:
-    def __init__(self, name, email, venues, artists, locations):
+class User:
+    def __init__(self, name, nickname, email, locations):
         self.name = name
+        self.nickname = nickname
         self.email = email
-        self.venues = venues
-        self.artists = artists
         self.locations = locations
+        self.artists = []
+        self.venues = []
+        self.promoters = []
         self.email_body = ""
+
+    def add_artist(self, artist_name, artist_id):
+        self.artists.append({"name": artist_name, "id": artist_id})
+
+    def add_venue(self, venue_name, venue_id):
+        self.venues.append({"name": venue_name, "id": venue_id})
+
+    def add_promoter(self, promoter_name, promoter_id):
+        self.promoters.append({"name": promoter_name, "id": promoter_id})
 
     def add_to_email(self, message):
         if self.email_body == "":

@@ -21,11 +21,11 @@ from bs4 import BeautifulSoup
 from app.artist_event import ArtistEvent
 from app.database import Database
 from app.event import Event
-from app.person import Person
+from app.user import User
 
 
 class App:
-    DEBUG = False
+    DEBUG = True
 
     if DEBUG:
         CONFIG_PATH = "testing_config.json"
@@ -36,15 +36,18 @@ class App:
         CONFIG = json.load(f)
 
     def main(self):
+        if not database_exists(self.CONFIG["database_url"]):
+            Database.init_db(self.CONFIG["database_url"])
+        db = Database.from_url(self.CONFIG["database_url"])
+
+        users = self.update_user_preferences(db)
+        artists = db.get_distinctive_items("artist")
+        print(artists)
+        return
         venues_map, artists_map = self.get_mapping(self.CONFIG["mapping_path"])
         people, all_venues, all_artists = self.get_interests(
             self.CONFIG["interests_path"]
         )
-
-        if not database_exists(self.CONFIG["database_url"]):
-            Database.init_db(self.CONFIG["database_url"])
-
-        db = Database.from_url(self.CONFIG["database_url"])
 
         # go through venues
         number_of_new_events = 0
@@ -111,7 +114,7 @@ class App:
                         f"Could not generate event from the following html: {html_event.get_text()}"
                     )
 
-                if not db.in_artists_database(event.event_id, artist_name):
+                if not db.in_artists_database(event.event_id):
                     print(
                         f"NEW EVENT WITH ID {event.event_id} WILL BE ADDED TO THE DATABASE"
                     )
@@ -130,10 +133,72 @@ class App:
             f"{number_of_new_artist_events} NEW ARTIST EVENTS FOUND AT {str(datetime.datetime.now())}"
         )
 
-    def get_mapping(self, mapping_path):
-        with open(mapping_path) as f:
-            mapping = json.load(f)
-        return mapping["venues"], mapping["artists"]
+    def update_user_preferences(self, db):
+        users = self.get_users()
+        users = self.download_users_interests(users)
+        print("Updating users database")
+        self.update_database(users, db)
+
+    def get_users(self):
+        with open(self.CONFIG["users_path"]) as f:
+            users_json = json.load(f)
+        users = []
+        for user_data in users_json["users"]:
+            users.append(
+                User(
+                    user_data["name"],
+                    user_data["nickname"],
+                    user_data["email"],
+                    user_data["locations"],
+                )
+            )
+        return users
+
+    def download_users_interests(self, users):
+        with requests.Session() as s:
+            s.post(self.CONFIG["login_url"], data=self.CONFIG["payload"])
+
+            for user in users:
+                print(f"Fetching user {user.nickname} preferences")
+                url = self.CONFIG["profile_prefix"] + user.nickname + "/favourites"
+                html = s.get(url)
+                html.encoding = "utf-8"
+                soup = BeautifulSoup(html.text, "html.parser")
+
+                html_artists = soup.find_all("div", class_="fav")
+                for artist in html_artists:
+                    info_tag = artist.find("div", class_="pb2").find("a")
+                    artist_name = info_tag.get_text()
+                    artist_id = info_tag.get("href")[4:]
+                    user.add_artist(artist_name, artist_id)
+
+                html_venues = soup.find("ul", class_="list venueListing").find_all(
+                    "li", recursive=False
+                )
+                for venue in html_venues:
+                    info_tag = venue.find_all("a")[1]
+                    venue_name = info_tag.get_text()
+                    venue_id = info_tag.get("href")[14:]
+                    user.add_venue(venue_name, venue_id)
+
+                html_promoters = soup.find_all("ul", class_="list")[-1].find_all(
+                    "li", recursive=False
+                )
+                for promoter in html_promoters:
+                    info_tag = promoter.find_all("a")[1]
+                    promoter_name = info_tag.get_text()
+                    promoter_id = info_tag.get("href")[18:]
+                    user.add_promoter(promoter_name, promoter_id)
+        return users
+
+    def update_database(self, users, db):
+        for user in users:
+            db.update_user(user)
+
+    #    def get_mapping(self, mapping_path):
+    #        with open(mapping_path) as f:
+    #            mapping = json.load(f)
+    #        return mapping["venues"], mapping["artists"]
 
     def get_interests(self, interests_path):
         with open(interests_path) as f:
@@ -213,10 +278,10 @@ class App:
     def add_artist_notification(self, artist_name, event, message, people):
         for person in people:
             if not artist_name in person.artists:  # do not notify if irrelevant
-                return
+                continue
             if not person.locations:  # notify if no location preference specified
                 person.add_to_email(message)
-                return
+                continue
             for location in person.locations:  # notify if location preference matches
                 if location in event.venue:
                     person.add_to_email(message)
