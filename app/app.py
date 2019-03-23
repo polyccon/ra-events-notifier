@@ -21,6 +21,7 @@ from bs4 import BeautifulSoup
 from app.artist_event import ArtistEvent
 from app.database import Database
 from app.event import Event
+from app.logger import Logger
 from app.user import User
 
 
@@ -35,24 +36,23 @@ class App:
     with open(CONFIG_PATH) as f:
         CONFIG = json.load(f)
 
+    logger = Logger.get(__name__)
+
     def main(self):
         if not database_exists(self.CONFIG["database_url"]):
+            self.logger.info("Creating new database")
             Database.init_db(self.CONFIG["database_url"])
+        self.logger.info("Connecting to the database")
         db = Database.from_url(self.CONFIG["database_url"])
 
         users = self.update_user_preferences(db)
+
         artists = db.get_distinctive_items("artist")
-        print(artists)
-        return
-        venues_map, artists_map = self.get_mapping(self.CONFIG["mapping_path"])
-        people, all_venues, all_artists = self.get_interests(
-            self.CONFIG["interests_path"]
-        )
 
         # go through venues
         number_of_new_events = 0
         for venue_name in all_venues:
-            print(f"Checking {venue_name} venue...")
+            self.logger.info(f"Checking {venue_name} venue...")
 
             venue_id = venues_map[venue_name]
 
@@ -134,9 +134,11 @@ class App:
         )
 
     def update_user_preferences(self, db):
+        self.logger.info("Downloading users favourites")
         users = self.get_users()
         users = self.download_users_interests(users)
-        print("Updating users database")
+
+        self.logger.info("Updating users database")
         self.update_database(users, db)
 
     def get_users(self):
@@ -159,7 +161,7 @@ class App:
             s.post(self.CONFIG["login_url"], data=self.CONFIG["payload"])
 
             for user in users:
-                print(f"Fetching user {user.nickname} preferences")
+                self.logger.info(f"Fetching user {user.nickname} preferences")
                 url = self.CONFIG["profile_prefix"] + user.nickname + "/favourites"
                 html = s.get(url)
                 html.encoding = "utf-8"
@@ -194,11 +196,6 @@ class App:
     def update_database(self, users, db):
         for user in users:
             db.update_user(user)
-
-    #    def get_mapping(self, mapping_path):
-    #        with open(mapping_path) as f:
-    #            mapping = json.load(f)
-    #        return mapping["venues"], mapping["artists"]
 
     def get_interests(self, interests_path):
         with open(interests_path) as f:

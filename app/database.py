@@ -13,16 +13,31 @@ from app.models import DBLocation
 from app.models import DBArtist
 from app.models import DBVenue
 from app.models import DBPromoter
+from app.logger import Logger
 
 
 class Database:
     def __init__(self, session):
         self.session = session
+        self.logger = Logger.get(__name__)
+
+    @classmethod
+    def from_url(cls, database_url):
+        engine = create_engine(database_url, echo=False)
+        Session = sessionmaker(bind=engine)
+        session = Session()
+        return cls(session)
+
+    @classmethod
+    def init_db(cls, database_url):
+        create_database(database_url)
+        engine = create_engine(database_url, echo=True)
+        Base.metadata.create_all(engine)
 
     def update_user(self, user):
         db_user = self.session.query(DBUser).filter_by(nickname=user.nickname).first()
         if db_user is None:
-            print(f"Adding new user {user.nickname} to the database")
+            self.logger.info(f"Adding new user {user.nickname} to the database")
             db_user = DBUser(name=user.name, nickname=user.nickname, email=user.email)
             self.session.add(db_user)
             self.session.flush()
@@ -121,16 +136,3 @@ class Database:
 
     def commit(self):
         self.session.commit()
-
-    @classmethod
-    def from_url(cls, database_url):
-        engine = create_engine(database_url, echo=False)
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        return cls(session)
-
-    @classmethod
-    def init_db(cls, database_url):
-        create_database(database_url)
-        engine = create_engine(database_url, echo=True)
-        Base.metadata.create_all(engine)

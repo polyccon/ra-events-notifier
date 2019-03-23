@@ -74,10 +74,7 @@ class DBVenueEvent(Base):
     tickets_available = Column(Boolean)
 
     def __repr__(self):
-        return "<DBVenueEvent(event_id='%s', tickets_available='%s')>" % (
-            self.event_id,
-            self.tickets_available,
-        )
+        return f"<DBVenueEvent(event_id={self.event_id}, tickets_available={self.tickets_available})>"
 
 
 class DBArtistEvent(Base):
