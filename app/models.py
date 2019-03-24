@@ -33,61 +33,44 @@ class DBArtist(Base):
     __tablename__ = "artists"
     id = Column(Integer, primary_key=True)
     name = Column(String(50))
-    artist_id = Column(String(50))
+    tag = Column(String(50))
     user_id = Column(Integer, ForeignKey("users.id"))
 
     def __repr__(self):
-        return (
-            f"<DBArtist(name={self.name}, id={self.artist_id}, user_id={self.user_id})>"
-        )
+        return f"<DBArtist(name={self.name}, tag={self.tag}, user_id={self.user_id})>"
 
 
 class DBVenue(Base):
     __tablename__ = "venues"
     id = Column(Integer, primary_key=True)
     name = Column(String(50))
-    venue_id = Column(String(50))
+    tag = Column(String(50))
     user_id = Column(Integer, ForeignKey("users.id"))
 
     def __repr__(self):
-        return (
-            f"<DBVenue(name={self.name}, id={self.venue_id}, user_id={self.user_id})>"
-        )
+        return f"<DBVenue(name={self.name}, tag={self.tag}, user_id={self.user_id})>"
 
 
 class DBPromoter(Base):
     __tablename__ = "promoters"
     id = Column(Integer, primary_key=True)
     name = Column(String(50))
-    promoter_id = Column(String(50))
+    tag = Column(String(50))
     user_id = Column(Integer, ForeignKey("users.id"))
 
     def __repr__(self):
-        return f"<DBPromoter(name={self.name}, id={self.promoter_id}, user_id={self.user_id})>"
+        return f"<DBPromoter(name={self.name}, tag={self.tag}, user_id={self.user_id})>"
 
 
-class DBVenueEvent(Base):
+class DBEvent(Base):
     __tablename__ = "venueevents"
 
     id = Column(Integer, primary_key=True)
     event_id = Column(String(50))
+    event_type = Column(String(10))
     tickets_available = Column(Boolean)
 
     def __repr__(self):
-        return f"<DBVenueEvent(event_id={self.event_id}, tickets_available={self.tickets_available})>"
-
-
-class DBArtistEvent(Base):
-    __tablename__ = "artistsevents"
-
-    id = Column(Integer, primary_key=True)
-    event_id = Column(String(50))
-    tickets_available = Column(Boolean)
-
-
-class DBPromoterEvent(Base):
-    __tablename__ = "promoterevents"
-
-    id = Column(Integer, primary_key=True)
-    event_id = Column(String(50))
-    tickets_available = Column(Boolean)
+        return f"<DBEvent(event_id={self.event_id}, \
+                event_type={self.event_type}, \
+                tickets_available={self.tickets_available})>"

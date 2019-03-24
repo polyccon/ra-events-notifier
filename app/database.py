@@ -5,9 +5,7 @@ from sqlalchemy_utils import database_exists, create_database
 
 Base = declarative_base()
 
-from app.models import DBVenueEvent
-from app.models import DBArtistEvent
-from app.models import DBPromoterEvent
+from app.models import DBEvent
 from app.models import DBUser
 from app.models import DBLocation
 from app.models import DBArtist
@@ -41,6 +39,10 @@ class Database:
             db_user = DBUser(name=user.name, nickname=user.nickname, email=user.email)
             self.session.add(db_user)
             self.session.flush()
+        self.session.query(DBVenue).filter_by(user_id=db_user.id).delete()
+        self.session.query(DBArtist).filter_by(user_id=db_user.id).delete()
+        self.session.query(DBPromoter).filter_by(user_id=db_user.id).delete()
+
         for location in user.locations:
             if (
                 self.session.query(DBLocation)
@@ -58,7 +60,7 @@ class Database:
                 is None
             ):
                 db_artist = DBArtist(
-                    name=artist["name"], artist_id=artist["id"], user_id=db_user.id
+                    name=artist["name"], tag=artist["tag"], user_id=db_user.id
                 )
                 self.session.add(db_artist)
         for venue in user.venues:
@@ -69,7 +71,7 @@ class Database:
                 is None
             ):
                 db_venue = DBVenue(
-                    name=venue["name"], venue_id=venue["id"], user_id=db_user.id
+                    name=venue["name"], tag=venue["tag"], user_id=db_user.id
                 )
                 self.session.add(db_venue)
         for promoter in user.promoters:
@@ -80,14 +82,13 @@ class Database:
                 is None
             ):
                 db_promoter = DBPromoter(
-                    name=promoter["name"],
-                    promoter_id=promoter["id"],
-                    user_id=db_user.id,
+                    name=promoter["name"], tag=promoter["tag"], user_id=db_user.id
                 )
                 self.session.add(db_promoter)
         self.session.commit()
 
     def get_distinctive_items(self, item_name):
+        self.logger.info(f"Getting {item_name} items from the database")
         if item_name is "artist":
             item_object = DBArtist
         elif item_name is "venue":
@@ -96,43 +97,32 @@ class Database:
             item_object = DBPromoter
 
         items = []
-        for item in self.session.query(
-            item_object.name, item_object.artist_id
-        ).distinct():
-            items.append({"name": item[0], "id": item[1]})
+        for item in self.session.query(item_object.name, item_object.tag).distinct():
+            items.append({"name": item[0], "tag": item[1]})
         return items
 
-    def in_venues_database(self, event_id):
-        if (
-            self.session.query(DBVenueEvent).filter_by(event_id=event_id).first()
-            is None
-        ):
-            return False
-        return True
+    def fetch_from_database(self, event_id, event_type):
+        return (
+            self.session.query(DBEvent)
+            .filter_by(event_id=event_id, event_type=event_type)
+            .first()
+        )
 
-    def in_artists_database(self, event_id):
-        if (
-            self.session.query(DBArtistEvent).filter_by(event_id=event_id).first()
-            is None
-        ):
-            return False
-        return True
-
-    def in_promoters_database(self, event_id):
-        if (
-            self.session.query(DBPromoterEvent).filter_by(event_id=event_id).first()
-            is None
-        ):
-            return False
-        return True
-
-    def add_venue_event(self, event_id):
-        event = DBVenueEvent(event_id=event_id)
+    def add_event(self, event_id, event_type, tickets_available):
+        event = DBEvent(
+            event_id=event_id,
+            event_type=event_type,
+            tickets_available=tickets_available,
+        )
         self.session.add(event)
 
-    def add_artist_event(self, event_id, artist_name):
-        event = DBArtistEvent(event_id=event_id, artist_name=artist_name)
-        self.session.add(event)
+    def update_event(self, event_id, event_type, tickets_available):
+        event = (
+            self.session.query(DBEvent)
+            .filter_by(event_id=event_id, event_type=event_type)
+            .first()
+        )
+        event.tickets_available = tickets_available
 
     def commit(self):
         self.session.commit()

@@ -18,7 +18,6 @@ from sqlalchemy_utils import database_exists
 
 from bs4 import BeautifulSoup
 
-from app.artist_event import ArtistEvent
 from app.database import Database
 from app.event import Event
 from app.logger import Logger
@@ -26,7 +25,7 @@ from app.user import User
 
 
 class App:
-    DEBUG = True
+    DEBUG = False
 
     if DEBUG:
         CONFIG_PATH = "testing_config.json"
@@ -45,101 +44,59 @@ class App:
         self.logger.info("Connecting to the database")
         db = Database.from_url(self.CONFIG["database_url"])
 
-        users = self.update_user_preferences(db)
+        users = self.update_users_preferences(db)
 
+        venues = db.get_distinctive_items("venue")
         artists = db.get_distinctive_items("artist")
+        promoters = db.get_distinctive_items("promoter")
 
         # go through venues
-        number_of_new_events = 0
-        for venue_name in all_venues:
-            self.logger.info(f"Checking {venue_name} venue...")
+        new_events = []
+        for venue in venues:
+            self.logger.info(f"Checking {venue['name']} venue...")
 
-            venue_id = venues_map[venue_name]
+            venue["type"] = "venue"
+            venue_events = self.get_events(
+                venue, self.CONFIG["venue_url_prefix"] + venue["tag"]
+            )
+            new_venue_events = self.add_to_database(db, venue_events)
+            new_events.extend(new_venue_events)
 
-            url = self.CONFIG["venue_url_prefix"] + venue_id
+        for artist in artists:
+            self.logger.info(f"Checking {artist['name']} artist...")
 
-            html = requests.get(url)
-            html.encoding = "utf-8"
+            artist["type"] = "artist"
+            artist_events = self.get_events(
+                artist, self.CONFIG["artist_url_prefix"] + artist["tag"]
+            )
+            new_artist_events = self.add_to_database(db, artist_events)
+            new_events.extend(new_artist_events)
 
-            soup = BeautifulSoup(html.text, "html.parser")
+        for promoter in promoters:
+            self.logger.info(f"Checking {promoter['name']} promoter...")
 
-            html_events = soup.find_all("article", class_="event-item")
+            promoter["type"] = "promoter"
+            promoter_events = self.get_events(
+                promoter, self.CONFIG["promoter_url_prefix"] + promoter["tag"]
+            )
+            new_promoter_events = self.add_to_database(db, promoter_events)
+            new_events.extend(new_promoter_events)
 
-            for html_event in html_events:
-                try:
-                    event = Event.from_html(html_event)
-                except:
-                    print(
-                        f"Could not generate event from the following html: {html_event.get_text()}"
-                    )
-
-                if not db.in_venues_database(event.event_id):
-                    print(
-                        f"NEW EVENT WITH URL {event.event_url} WILL BE ADDED TO THE DATABASE"
-                    )
-                    # Add the ticket prices to the event
-                    event.tickets = self.get_tickets(event.event_url)
-                    db.add_venue_event(event.event_id)
-                    number_of_new_events += 1
-
-                    message = self.compose_message(
-                        event, name=venue_name, event_type="venue"
-                    )
-                    self.add_venue_notification(venue_name, message, people)
-        print(
-            f"{number_of_new_events} NEW VENUE EVENTS FOUND AT {str(datetime.datetime.now())}"
-        )
-
-        # go through artists
-        number_of_new_artist_events = 0
-        for artist_name in all_artists:
-            print(f"Checking {artist_name} artist...")
-
-            artist_id = artists_map[artist_name]
-
-            url = self.CONFIG["artist_url_prefix"] + artist_id
-
-            html = requests.get(url)
-            html.encoding = "utf-8"
-
-            soup = BeautifulSoup(html.text, "html.parser")
-
-            html_events = soup.find_all("article", class_="event-item")
-
-            for html_event in html_events:
-                try:
-                    event = ArtistEvent.from_html(html_event)
-                except:
-                    print(
-                        f"Could not generate event from the following html: {html_event.get_text()}"
-                    )
-
-                if not db.in_artists_database(event.event_id):
-                    print(
-                        f"NEW EVENT WITH ID {event.event_id} WILL BE ADDED TO THE DATABASE"
-                    )
-                    # Add the ticket prices to the event
-                    event.tickets = self.get_tickets(event.event_url)
-                    db.add_artist_event(event.event_id, artist_name)
-                    number_of_new_artist_events += 1
-
-                    message = self.compose_message(
-                        event, name=artist_name, event_type="artist"
-                    )
-                    self.add_artist_notification(artist_name, event, message, people)
         db.commit()
-        self.send_emails(people)
-        print(
-            f"{number_of_new_artist_events} NEW ARTIST EVENTS FOUND AT {str(datetime.datetime.now())}"
-        )
 
-    def update_user_preferences(self, db):
+        for new_event in new_events:
+            self.add_event_notifications(new_event, users)
+        self.send_emails(users)
+
+    def update_users_preferences(self, db):
         self.logger.info("Downloading users favourites")
         users = self.get_users()
         users = self.download_users_interests(users)
 
         self.logger.info("Updating users database")
         self.update_database(users, db)
+
+        return users
 
     def get_users(self):
         with open(self.CONFIG["users_path"]) as f:
@@ -171,8 +128,8 @@ class App:
                 for artist in html_artists:
                     info_tag = artist.find("div", class_="pb2").find("a")
                     artist_name = info_tag.get_text()
-                    artist_id = info_tag.get("href")[4:]
-                    user.add_artist(artist_name, artist_id)
+                    artist_tag = info_tag.get("href")[4:]
+                    user.add_artist(artist_name, artist_tag)
 
                 html_venues = soup.find("ul", class_="list venueListing").find_all(
                     "li", recursive=False
@@ -180,8 +137,8 @@ class App:
                 for venue in html_venues:
                     info_tag = venue.find_all("a")[1]
                     venue_name = info_tag.get_text()
-                    venue_id = info_tag.get("href")[14:]
-                    user.add_venue(venue_name, venue_id)
+                    venue_tag = info_tag.get("href")[14:]
+                    user.add_venue(venue_name, venue_tag)
 
                 html_promoters = soup.find_all("ul", class_="list")[-1].find_all(
                     "li", recursive=False
@@ -189,39 +146,65 @@ class App:
                 for promoter in html_promoters:
                     info_tag = promoter.find_all("a")[1]
                     promoter_name = info_tag.get_text()
-                    promoter_id = info_tag.get("href")[18:]
-                    user.add_promoter(promoter_name, promoter_id)
+                    promoter_tag = info_tag.get("href")[18:]
+                    user.add_promoter(promoter_name, promoter_tag)
         return users
 
     def update_database(self, users, db):
         for user in users:
             db.update_user(user)
 
-    def get_interests(self, interests_path):
-        with open(interests_path) as f:
-            data = json.load(f)
-        people = []
-        all_venues = []
-        all_artists = []
-        for person_data in data.items():
-            person = person_data[1]
-            people.append(
-                Person(
-                    person["name"],
-                    person["email"],
-                    person["venues"],
-                    person["artists"],
-                    person["locations"],
+    def get_events(self, entity, url):
+        html = requests.get(url)
+        html.encoding = "utf-8"
+
+        soup = BeautifulSoup(html.text, "html.parser")
+
+        events_html = soup.find_all("article", class_="event-item")
+
+        events = []
+        for event_html in events_html:
+            try:
+                if entity["type"] is "venue":
+                    event = Event.from_venue_html(entity["name"], event_html)
+                elif entity["type"] is "artist":
+                    event = Event.from_artist_html(entity["name"], event_html)
+                elif entity["type"] is "promoter":
+                    event = Event.from_promoter_html(entity["name"], event_html)
+            except:
+                self.logger.warning(
+                    f"Could not generate event from the following html: {event_html.get_text()}"
                 )
-            )
-            all_venues.extend(person["venues"])
-            all_artists.extend(person["artists"])
+            events.append(event)
+        return events
 
-        # remove duplicates and return
-        all_venues = list(dict.fromkeys(all_venues))
-        all_artists = list(dict.fromkeys(all_artists))
+    def add_to_database(self, db, events):
+        new_events = []
+        for event in events:
+            event_in_database = db.fetch_from_database(event.event_id, event.event_type)
 
-        return people, all_venues, all_artists
+            if event_in_database is not None and event_in_database.tickets_available:
+                continue
+
+            event.tickets = self.get_tickets(event.event_url)
+            tickets_available = (True, False)[not event.tickets]
+
+            # If event is not in db, add
+            if event_in_database is None:
+                db.add_event(event.event_id, event.event_type, tickets_available)
+                self.logger.info(
+                    f"NEW EVENT WITH URL {event.event_url} IS ADDED TO THE DATABASE. TICKETS: {tickets_available}"
+                )
+                new_events.append(event)
+            # The event was in database but didn't have tickets
+            else:
+                if tickets_available:
+                    db.update_event(event.event_id, event.event_type, tickets_available)
+                    self.logger.info(
+                        f"EVENT WITH URL {event.event_url} WAS UPDATED WITH TICKETS"
+                    )
+                    new_events.append(event)
+        return new_events
 
     def get_tickets(self, event_url):
         html = requests.get(event_url)
@@ -240,62 +223,26 @@ class App:
                     }
                 )
         except:
-            print(f"some problem getting tickets for {event_url}")
+            self.logger.warning(f"some problem getting tickets for {event_url}")
         return tickets
 
-    def compose_message(self, event, name, event_type):
-        message = ""
-        if event_type == "venue":
-            message += f"<p> New event at <b>{name}</b> \
-            named <i>{event.name}</i> \
-            with a lineup of <b>{event.lineup}</b> \
-            on {event.date} has been added here: {event.event_url}<br>"
+    def add_event_notifications(self, event, users):
+        for user in users:
+            user.add_to_email(event)
 
-        if event_type == "artist":
-            message += f"<p>New event: <b>{name}</b> \
-            is playing at <b>{event.venue}</b> on {event.date} \
-            at the night called <i>{event.name}</i>. \
-            Find it here: {event.event_url}<br>"
-
-        if event.tickets:
-            message += "<b>Tickets currently on sale:</b><br>"
-            for ticket in event.tickets:
-                name = ticket["name"]
-                price = ticket["price"]
-                message += f"    <u>{name}</u>: {price}<br>"
-        message += "<br>"
-
-        return message
-
-    def add_venue_notification(self, venue, message, people):
-        for person in people:
-            if venue in person.venues:
-                person.add_to_email(message)
-
-    def add_artist_notification(self, artist_name, event, message, people):
-        for person in people:
-            if not artist_name in person.artists:  # do not notify if irrelevant
-                continue
-            if not person.locations:  # notify if no location preference specified
-                person.add_to_email(message)
-                continue
-            for location in person.locations:  # notify if location preference matches
-                if location in event.venue:
-                    person.add_to_email(message)
-
-    def send_emails(self, people):
+    def send_emails(self, users):
         service = discovery.build("gmail", "v1", credentials=self.make_credentials())
 
-        for person in people:
-            if person.email_body == "":
+        for user in users:
+            if user.number_of_new_events == 0:
                 continue
-            person.add_email_ending()
-            print(f"Emailing {person.email}")
+            user.add_email_ending()
+            self.logger.info(f"Emailing {user.email}")
             message = MIMEMultipart()
             message["From"] = "me"
             message["Subject"] = "New events on RA"
-            message["To"] = person.email
-            message.attach(MIMEText(person.email_body, "html"))
+            message["To"] = user.email
+            message.attach(MIMEText(user.email_body.get(), "html"))
             raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
             body = {"raw": raw_message}
             self.send_email_request(service, body)
