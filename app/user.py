@@ -43,6 +43,7 @@ class User:
         elif event.event_type == "promoter":
             if any(promoter["name"] == event.promoter for promoter in self.promoters):
                 self.email_body.add_promoter_event(event)
+                self.email_body.add_tickets(event.tickets)
                 self.number_of_new_events += 1
 
     def add_email_ending(self):
