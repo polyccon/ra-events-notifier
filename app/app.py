@@ -125,29 +125,32 @@ class App:
                 soup = BeautifulSoup(html.text, "html.parser")
 
                 html_artists = soup.find_all("div", class_="fav")
-                for artist in html_artists:
-                    info_tag = artist.find("div", class_="pb2").find("a")
-                    artist_name = info_tag.get_text()
-                    artist_tag = info_tag.get("href")[4:]
-                    user.add_artist(artist_name, artist_tag)
+                if html_artists is not None:
+                    for artist in html_artists:
+                        info_tag = artist.find("div", class_="pb2").find("a")
+                        artist_name = info_tag.get_text()
+                        artist_tag = info_tag.get("href")[4:]
+                        user.add_artist(artist_name, artist_tag)
 
-                html_venues = soup.find("ul", class_="list venueListing").find_all(
-                    "li", recursive=False
-                )
-                for venue in html_venues:
-                    info_tag = venue.find_all("a")[1]
-                    venue_name = info_tag.get_text()
-                    venue_tag = info_tag.get("href")[14:]
-                    user.add_venue(venue_name, venue_tag)
+                html_venues = soup.find("ul", class_="list venueListing")
+                if html_venues is not None:
+                    for venue in html_venues.find_all("li", recursive=False):
+                        info_tag = venue.find_all("a")[1]
+                        venue_name = info_tag.get_text()
+                        venue_tag = info_tag.get("href")[14:]
+                        user.add_venue(venue_name, venue_tag)
 
-                html_promoters = soup.find_all("ul", class_="list")[-1].find_all(
-                    "li", recursive=False
-                )
-                for promoter in html_promoters:
-                    info_tag = promoter.find_all("a")[1]
-                    promoter_name = info_tag.get_text()
-                    promoter_tag = info_tag.get("href")[18:]
-                    user.add_promoter(promoter_name, promoter_tag)
+                try:
+                    html_promoters = soup.find_all("ul", class_="list")[-1]
+                    for promoter in html_promoters.find_all("li", recursive=False):
+                        info_tag = promoter.find_all("a")[1]
+                        promoter_name = info_tag.get_text()
+                        promoter_tag = info_tag.get("href")[18:]
+                        user.add_promoter(promoter_name, promoter_tag)
+                except:
+                    self.logger.warning(
+                        "User {user.nickname} does not follow any promoters"
+                    )
         return users
 
     def update_database(self, users, db):
