@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "ae327a0696708329d93d9c39ec83596d4ca156099d901b2d836be3db98eebba0"
+            "sha256": "776e97ba2cd94204d1456dee97d4de615abb65f79116c349270f079df31c5c23"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -42,10 +42,10 @@
         },
         "certifi": {
             "hashes": [
-                "sha256:47f9c83ef4c0c621eaef743f133f09fa8a74a9b75f037e8624f83bd1b6626cb7",
-                "sha256:993f830721089fef441cdfeb4b2c8c9df86f0c63239f06bd025a76a7daddb033"
+                "sha256:59b7658e26ca9c7339e00f8f4636cdfe59d34fa37b9b04f6f9e9926b3cece1a5",
+                "sha256:b26104d6835d1f5e49452a26eb2ff87fe7090b89dfcaee5ea2212697e1e1d7ae"
             ],
-            "version": "==2018.11.29"
+            "version": "==2019.3.9"
         },
         "chardet": {
             "hashes": [
@@ -79,17 +79,18 @@
         },
         "google-auth-oauthlib": {
             "hashes": [
-                "sha256:226d1d0960f86ba5d9efd426a70b291eaba96f47d071657e0254ea969025728a",
-                "sha256:81ba22acada4d13b1d83f9371ab19fd61f1250a542d21cf49e4dcf0637a7344a"
+                "sha256:a0470c19130ddf90c2b07c0c701d72890a7335090903aeb709f003a66416380f",
+                "sha256:c57303d85199fdba00bc7b8fb21ccf6c2b9d3e69d6830fd69ff951c64cf2c1d6"
             ],
             "index": "pypi",
-            "version": "==0.2.0"
+            "version": "==0.3.0"
         },
         "httplib2": {
             "hashes": [
-                "sha256:4ba6b8fd77d0038769bf3c33c9a96a6f752bc4cdf739701fdcaf210121f399d4"
+                "sha256:23914b5487dfe8ef09db6656d6d63afb0cf3054ad9ebc50868ddc8e166b5f8e8",
+                "sha256:a18121c7c72a56689efbf1aef990139ad940fee1e64c6f2458831736cd593600"
             ],
-            "version": "==0.12.1"
+            "version": "==0.12.3"
         },
         "idna": {
             "hashes": [
@@ -114,10 +115,10 @@
         },
         "pyasn1-modules": {
             "hashes": [
-                "sha256:79580acf813e3b7d6e69783884e6e83ac94bf4617b36a135b85c599d8a818a7b",
-                "sha256:a52090e8c5841ebbf08ae455146792d9ef3e8445b21055d3a3b7ed9c712b7c7c"
+                "sha256:ef721f68f7951fab9b0404d42590f479e30d9005daccb1699b0a51bb4177db96",
+                "sha256:f309b6c94724aeaf7ca583feb1cc70430e10d7551de5e36edfc1ae6909bcfb3c"
             ],
-            "version": "==0.2.4"
+            "version": "==0.2.5"
         },
         "requests": {
             "hashes": [
@@ -150,17 +151,17 @@
         },
         "soupsieve": {
             "hashes": [
-                "sha256:afa56bf14907bb09403e5d15fbed6275caa4174d36b975226e3b67a3bb6e2c4b",
-                "sha256:eaed742b48b1f3e2d45ba6f79401b2ed5dc33b2123dfe216adb90d4bfa0ade26"
+                "sha256:6898e82ecb03772a0d82bd0d0a10c0d6dcc342f77e0701d0ec4a8271be465ece",
+                "sha256:b20eff5e564529711544066d7dc0f7661df41232ae263619dede5059799cdfca"
             ],
-            "version": "==1.8"
+            "version": "==1.9.1"
         },
         "sqlalchemy": {
             "hashes": [
-                "sha256:11ead7047ff3f394ed0d4b62aded6c5d970a9b718e1dc6add9f5e79442cc5b14"
+                "sha256:91c54ca8345008fceaec987e10924bf07dcab36c442925357e5a467b36a38319"
             ],
             "index": "pypi",
-            "version": "==1.3.0"
+            "version": "==1.3.3"
         },
         "sqlalchemy-utils": {
             "hashes": [
@@ -179,10 +180,11 @@
         },
         "urllib3": {
             "hashes": [
-                "sha256:61bf29cada3fc2fbefad4fdf059ea4bd1b4a86d2b6d15e1c7c0b582b9752fe39",
-                "sha256:de9529817c93f27c8ccbfead6985011db27bd0ddfcdb2d86f3f663385c6a9c22"
+                "sha256:4c291ca23bbb55c76518905869ef34bdd5f0e46af7afe6861e8375643ffee1a0",
+                "sha256:9a247273df709c4fedb38c711e44292304f73f39ab01beda9f6b9fc375669ac3"
             ],
-            "version": "==1.24.1"
+            "index": "pypi",
+            "version": "==1.24.2"
         }
     },
     "develop": {}

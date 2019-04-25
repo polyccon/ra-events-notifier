@@ -1,0 +1,15 @@
+{
+    "payload": {
+        "UsernameOrEmailAddress": "",
+        "Password": ""
+    },
+    "credentials_path": "",
+    "users_path": "",
+    "database_url": "sqlite:///database.db",
+    "login_url": "https://www.residentadvisor.net/login",
+    "profile_url_prefix": "https://www.residentadvisor.net/profile/",
+    "venue_url_prefix": "https://www.residentadvisor.net/club.aspx?id=",
+    "artist_url_prefix": "https://www.residentadvisor.net/dj/",
+    "promoter_url_prefix": "https://www.residentadvisor.net/promoter.aspx?id="
+}
+

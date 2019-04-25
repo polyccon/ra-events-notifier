@@ -1,0 +1,14 @@
+{
+    "users": [
+        {
+            "name": "Name",
+            "nickname": "ra_nickname",
+            "email": "example@example.com",
+            "locations": [
+                "Location1",
+                "Location2"
+            ]
+        }
+    ]
+}
+

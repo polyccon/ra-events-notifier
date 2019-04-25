@@ -28,7 +28,7 @@ class App:
     DEBUG = False
 
     if DEBUG:
-        CONFIG_PATH = "testing_config.json"
+        CONFIG_PATH = "config_testing.json"
     else:
         CONFIG_PATH = "config.json"
 
@@ -119,7 +119,7 @@ class App:
 
             for user in users:
                 self.logger.info(f"Fetching user {user.nickname} preferences")
-                url = self.CONFIG["profile_prefix"] + user.nickname + "/favourites"
+                url = self.CONFIG["profile_url_prefix"] + user.nickname + "/favourites"
                 html = s.get(url)
                 html.encoding = "utf-8"
                 soup = BeautifulSoup(html.text, "html.parser")
@@ -131,6 +131,10 @@ class App:
                         artist_name = info_tag.get_text()
                         artist_tag = info_tag.get("href")[4:]
                         user.add_artist(artist_name, artist_tag)
+                else:
+                    self.logger.warning(
+                        f"User {user.nickname} does not follow any artists"
+                    )
 
                 html_venues = soup.find("ul", class_="list venueListing")
                 if html_venues is not None:
@@ -139,6 +143,10 @@ class App:
                         venue_name = info_tag.get_text()
                         venue_tag = info_tag.get("href")[14:]
                         user.add_venue(venue_name, venue_tag)
+                else:
+                    self.logger.warning(
+                        f"User {user.nickname} does not follow any venues"
+                    )
 
                 try:
                     html_promoters = soup.find_all("ul", class_="list")[-1]
@@ -149,7 +157,7 @@ class App:
                         user.add_promoter(promoter_name, promoter_tag)
                 except:
                     self.logger.warning(
-                        "User {user.nickname} does not follow any promoters"
+                        f"User {user.nickname} does not follow any promoters"
                     )
         return users
 
