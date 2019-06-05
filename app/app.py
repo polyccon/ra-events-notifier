@@ -52,6 +52,7 @@ class App:
 
         # go through venues
         new_events = []
+
         for venue in venues:
             self.logger.info(f"Checking {venue['name']} venue...")
 
@@ -102,6 +103,7 @@ class App:
         with open(self.CONFIG["users_path"]) as f:
             users_json = json.load(f)
         users = []
+
         for user_data in users_json["users"]:
             users.append(
                 User(
@@ -111,6 +113,7 @@ class App:
                     user_data["locations"],
                 )
             )
+
         return users
 
     def download_users_interests(self, users):
@@ -125,6 +128,7 @@ class App:
                 soup = BeautifulSoup(html.text, "html.parser")
 
                 html_artists = soup.find_all("div", class_="fav")
+
                 if html_artists is not None:
                     for artist in html_artists:
                         info_tag = artist.find("div", class_="pb2").find("a")
@@ -137,6 +141,7 @@ class App:
                     )
 
                 html_venues = soup.find("ul", class_="list venueListing")
+
                 if html_venues is not None:
                     for venue in html_venues.find_all("li", recursive=False):
                         info_tag = venue.find_all("a")[1]
@@ -149,7 +154,10 @@ class App:
                     )
 
                 try:
-                    html_promoters = soup.find_all("ul", class_="list")[-1]
+                    html_promoters = soup.find(
+                        lambda tag: tag.name == "ul" and tag.get("class") == ["list"]
+                    )
+
                     for promoter in html_promoters.find_all("li", recursive=False):
                         info_tag = promoter.find_all("a")[1]
                         promoter_name = info_tag.get_text()
@@ -159,6 +167,7 @@ class App:
                     self.logger.warning(
                         f"User {user.nickname} does not follow any promoters"
                     )
+
         return users
 
     def update_database(self, users, db):
@@ -174,6 +183,7 @@ class App:
         events_html = soup.find_all("article", class_="event-item")
 
         events = []
+
         for event_html in events_html:
             try:
                 if entity["type"] is "venue":
@@ -187,10 +197,12 @@ class App:
                     f"Could not generate event from the following html: {event_html.get_text()}"
                 )
             events.append(event)
+
         return events
 
     def add_to_database(self, db, events):
         new_events = []
+
         for event in events:
             event_in_database = db.fetch_from_database(event.event_id, event.event_type)
 
@@ -201,6 +213,7 @@ class App:
             tickets_available = (True, False)[not event.tickets]
 
             # If event is not in db, add
+
             if event_in_database is None:
                 db.add_event(event.event_id, event.event_type, tickets_available)
                 self.logger.info(
@@ -215,6 +228,7 @@ class App:
                         f"EVENT WITH URL {event.event_url} WAS UPDATED WITH TICKETS"
                     )
                     new_events.append(event)
+
         return new_events
 
     def get_tickets(self, event_url):
@@ -225,6 +239,7 @@ class App:
         tickets = []
         try:
             html_tickets = soup.find_all("li", class_="onsale but")
+
             for html_ticket in html_tickets:
                 p = html_ticket.find("p")
                 tickets.append(
@@ -235,6 +250,7 @@ class App:
                 )
         except:
             self.logger.warning(f"some problem getting tickets for {event_url}")
+
         return tickets
 
     def add_event_notifications(self, event, users):
@@ -257,6 +273,7 @@ class App:
             raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
             body = {"raw": raw_message}
             self.send_email_request(service, body)
+
         return
 
     def make_credentials(self):
