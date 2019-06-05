@@ -154,16 +154,25 @@ class App:
                     )
 
                 try:
-                    html_promoters = soup.find(
-                        lambda tag: tag.name == "ul" and tag.get("class") == ["list"]
-                    )
+                    try:
+                        html_promoters = soup.find_all(
+                            lambda tag: tag.name == "ul"
+                            and tag.get("class") == ["list"]
+                        )[1]
+                    except Exception:
+                        # if find_all doesn't succeed, it means the person does not
+                        # follow any labels and only promoters are available
+                        html_promoters = soup.find(
+                            lambda tag: tag.name == "ul"
+                            and tag.get("class") == ["list"]
+                        )
 
                     for promoter in html_promoters.find_all("li", recursive=False):
                         info_tag = promoter.find_all("a")[1]
                         promoter_name = info_tag.get_text()
                         promoter_tag = info_tag.get("href")[18:]
                         user.add_promoter(promoter_name, promoter_tag)
-                except:
+                except Exception:
                     self.logger.warning(
                         f"User {user.nickname} does not follow any promoters"
                     )
